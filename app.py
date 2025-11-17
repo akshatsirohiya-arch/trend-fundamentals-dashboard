@@ -288,8 +288,17 @@ for i in range(0, len(TICKERS), batch_size):
         final_df.append(out)
 
 if final_df:
-    final = pd.concat(final_df).sort_values("FinalScore", ascending=False).reset_index(drop=True)
-    st.subheader("Top Momentum Picks")
+    final = (
+        pd.concat(final_df)
+        .sort_values("FinalScore", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    # ---- NEW FILTER YOU WANT ----
+    final = final[final["Ret1M"] < 20]
+
+    st.subheader("Top Momentum Picks (<20% 1M return)")
     st.dataframe(final.head(250))
+
 else:
     st.error("No results. Check tickers or yfinance status.")
