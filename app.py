@@ -29,31 +29,78 @@ if not FMP_KEY:
 # -----------------------
 @st.cache_data(ttl=24*3600)
 def load_index_tickers():
-    """Load SP500 + NASDAQ100 + Russell1000 from stable maintained sources."""
-    
-    # S&P 500 — maintained by Julien Dejardin, updates automatically
-    sp500 = pd.read_csv(
-        "https://raw.githubusercontent.com/datasets/s-and-p-500/master/data/constituents.csv"
-    )["Symbol"].tolist()
+    universe = [
+"A","AAL","AAP","AAPL","ABBV","ABC","ABMD","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADM","ADP","ADSK","AEE",
+"AEP","AES","AFL","AFRM","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALK","ALL","ALLE","AMAT","AMCR","AMD","AME",
+"AMGN","AMP","AMT","AMZN","ANET","ANSS","AON","AOS","APA","APD","APH","APP","APPF","APTV","ARE","ARLP","ARE",
+"ARMK","ASML","ATO","ATVI","AVB","AVGO","AVY","AWK","AXON","AZO","BA","BAC","BALL","BAX","BBWI","BBY","BDX",
+"BEN","BF.B","BG","BIIB","BIO","BK","BKNG","BKR","BLK","BLL","BLDR","BMY","BR","BRK.B","BRO","BSX","BTI",
+"BURL","BWA","BXP","C","CAG","CAH","CARR","CAT","CB","CBOE","CBRE","CBRL","CCI","CCL","CDAY","CDNS","CDW",
+"CE","CEG","CF","CFG","CHD","CHRW","CHTR","CI","CINF","CL","CLX","CMA","CMCSA","CME","CMG","CMI","CMS","CNC",
+"CNHI","CNP","COF","COG","COO","COP","COST","CPB","CPRT","CPT","CRL","CRM","CRWD","CSCO","CSGP","CSX","CTAS",
+"CTLT","CTSH","CTVA","CTXS","CVS","CVX","CXO","D","DAL","DD","DE","DFS","DG","DGX","DHI","DHR","DIS","DISCA",
+"DISH","DLR","DLTR","DOV","DPZ","DRE","DRI","DTE","DUK","DVA","DVN","DXC","EA","EBAY","ECL","ED","EFX","EIX",
+"EL","ELV","EMN","EMR","ENPH","EOG","EQIX","EQR","ES","ESS","ETN","ETR","ETSY","EVRG","EW","EXC","EXPD","EXPE",
+"EXR","F","FANG","FAST","FB","FBHS","FCX","FDX","FE","FFIV","FIS","FISV","FITB","FLIR","FLR","FLS","FLT","FMC",
+"FOX","FOXA","FRC","FRT","FTI","FTNT","FTV","GD","GE","GILD","GIS","GL","GLW","GM","GNRC","GOOG","GOOGL","GPC",
+"GPN","GPS","GRMN","GS","GWW","HAL","HAS","HBAN","HBI","HCA","HD","HES","HIG","HII","HLT","HOLX","HON","HPE",
+"HPQ","HRL","HSIC","HST","HSY","HUM","HWM","IBM","ICE","IDXX","IEX","IFF","ILMN","INCY","INFO","INTC","INTU",
+"IP","IPG","IPGP","IQV","IR","IRM","ISRG","IT","ITW","IVZ","J","JBHT","JCI","JKHY","JNJ","JNPR","JPM","JWN",
+"K","KEY","KEYS","KHC","KIM","KLAC","KMB","KMI","KMX","KO","KR","KSS","KSU","L","LB","LDOS","LEG","LEN","LH",
+"LHX","LIN","LKQ","LLY","LMT","LNC","LNT","LOW","LRCX","LUMN","LUV","LVS","LW","LYB","M","MA","MAA","MAC","MAR",
+"MAS","MAT","MCD","MCHP","MCK","MCO","MDLZ","MDT","MET","MGM","MHK","MKC","MKTX","MLM","MMC","MMM","MNST","MO",
+"MPWR","MRK","MRO","MS","MSCI","MSFT","MSI","MTB","MTD","MU","NCLH","NDAQ","NEE","NEM","NFLX","NI","NKE","NLOK",
+"NLSN","NOC","NOV","NOW","NRG","NSC","NTAP","NTRS","NUE","NVDA","NVR","NWL","NWS","NWSA","NXPI","O","ODFL","OGN",
+"OKE","OMC","ORCL","ORLY","OTIS","OXY","PARA","PAYC","PAYX","PCAR","PCRX","PCTY","PD","PEG","PEP","PFE","PFG",
+"PG","PGR","PH","PHM","PKG","PLD","PM","PNC","PNR","PNW","PPG","PPL","PRGO","PRU","PSA","PSX","PTC","PVH","PWR",
+"PXD","PYPL","QCOM","QRVO","RCL","RE","REG","REGN","RF","RHI","RJF","RL","RMD","ROK","ROL","ROP","ROST","RSG",
+"RTX","SBAC","SBUX","SCHW","SEE","SHW","SIVB","SJM","SLB","SLG","SMCI","SNA","SNPS","SO","SPG","SPGI","SPLK",
+"SRE","STT","STX","STZ","SWK","SWKS","SYF","SYK","SYY","T","TAP","TDY","TECH","TEL","TER","TFC","TFX","TGT","TJX",
+"TMO","TMUS","TPR","TRMB","TROW","TRV","TSCO","TSLA","TSN","TT","TTWO","TXN","TXT","UAL","UDR","UHS","ULTA",
+"UNH","UNP","UPS","URI","USB","V","VAR","VFC","VLO","VMC","VNO","VRSK","VRSN","VRTX","VTR","VTRS","VZ","WAB",
+"WAT","WBA","WDC","WEC","WELL","WFC","WHR","WM","WMB","WMT","WRB","WRK","WST","WU","WY","WYNN","XEL","XLNX",
+"XOM","XRAY","XYL","YUM","ZBH","ZBRA","ZION","ZTS",
+# NASDAQ 100
+"AAPL","MSFT","AMZN","NVDA","GOOGL","GOOG","META","PEP","AVGO","COST","TSLA",
+"ADBE","CMCSA","NFLX","AMD","CSCO","TXN","INTC","INTU","AMGN","QCOM","AMAT","HON",
+"PYPL","ADP","SBUX","CHTR","ISRG","MDLZ","BKNG","GILD","CSX","MRNA","LRCX","ADI",
+"MU","LULU","REGN","VRTX","KDP","MNST","ABNB","PANW","TEAM","COP","MELI","CRWD",
+"MAR","FTNT","CDNS","ORLY","EA","SNPS","KLAC","WDAY","ADSK","PAYX","DXCM","ODFL",
+"PCAR","MCHP","ROST","CTAS","BIDU","CEG","AEP","EXC","ORCL","IDXX","XEL","KHC",
+"CTSH","ANSS","VRSK",
+# Russell 1000
+"A","AAL","AAP","AAPL","ABBV","ABC","ABMD","ABNB","ABT","ACGL","ACN","ADBE","ADI","ADM","ADP","ADSK",
+"AEE","AEP","AES","AFL","AIG","AIZ","AJG","AKAM","ALB","ALGN","ALK","ALL","ALLE","AMAT","AMD","AME",
+"AMGN","AMP","AMT","AMZN","ANET","ANSS","AON","AOS","APA","APD","APH","APTV","ARE","ATO","AVB","AVGO",
+"AVY","AWK","AXON","AZO","BA","BAC","BALL","BAX","BBY","BDX","BEN","BF.B","BG","BIIB","BIO","BK",
+"BKNG","BKR","BLK","BLL","BMY","BR","BRK.B","BRO","BSX","BURL","BWA","BXP","C","CAG","CAH","CARR","CAT",
+"CB","CBOE","CBRE","CCI","CDAY","CDNS","CDW","CE","CEG","CF","CFG","CHD","CHRW","CHTR","CI","CINF","CL",
+"CLX","CMA","CMG","CMI","CMS","CNA","CNC","CNP","COF","COO","COP","COST","CPB","CPRT","CPT","CRL","CRM",
+"CRWD","CSCO","CSGP","CSX","CTAS","CTLT","CTSH","CTVA","CVS","CVX","D","DAL","DD","DE","DFS","DG","DGX",
+"DHI","DHR","DIS","DLR","DLTR","DOV","DPZ","DRE","DRI","DTE","DUK","DVA","DVN","DXC","EA","EBAY","ECL",
+"ED","EFX","EIX","EL","ELV","EMN","EMR","EOG","EQIX","EQR","ES","ESS","ETN","ETR","ETSY","EVRG","EW",
+"EXC","EXPD","EXPE","EXR","F","FANG","FAST","FDX","FE","FIS","FISV","FITB","FLS","FLT","FMC","FOX","FOXA",
+"FRC","FRT","FTNT","FTV","GD","GE","GILD","GIS","GPC","GPN","GRMN","GS","GWW","HAL","HAS","HBAN","HCA",
+"HD","HES","HIG","HII","HLT","HOLX","HON","HPE","HPQ","HRL","HSIC","HST","HSY","HUM","IBM","ICE","IDXX",
+"IEX","IFF","ILMN","INCY","INTC","INTU","IP","IPG","IQV","IR","IRM","ISRG","ITW","IVZ","J","JBHT","JCI",
+"JKHY","JNJ","JNPR","JPM","JWN","K","KEY","KEYS","KHC","KIM","KLAC","KMB","KMI","KMX","KO","KR","KSS",
+"KSU","L","LDOS","LEG","LEN","LH","LHX","LIN","LKQ","LLY","LMT","LNC","LNT","LOW","LRCX","LUMN","LUV",
+"LVS","LW","LYB","M","MA","MAA","MAR","MAS","MAT","MCD","MCHP","MCK","MCO","MDLZ","MDT","MET","MGM","MHK",
+"MKC","MKTX","MLM","MMM","MNST","MO","MPWR","MRK","MRO","MS","MSCI","MSFT","MSI","MTB","MTD","MU","NCLH",
+"NDAQ","NEE","NEM","NI","NKE","NLOK","NLSN","NOC","NOV","NRG","NSC","NTAP","NTRS","NUE","NVDA","NVR","NWL",
+"NWS","NWSA","NXPI","O","ODFL","OKE","OMC","ORCL","ORLY","OTIS","OXY","P","PARA","PAYX","PCAR","PCTY","PEP",
+"PFE","PFG","PG","PGR","PH","PHM","PKG","PLD","PM","PNC","PNR","PNW","PPG","PPL","PRGO","PRU","PSA","PSX",
+"PTC","PVH","PWR","PXD","PYPL","QCOM","QRVO","RCL","REG","REGN","RF","RGLD","RHI","RJF","RL","RMD","ROK",
+"ROL","ROP","ROST","RSG","RTX","SBAC","SBUX","SCHW","SEE","SHW","SJM","SLB","SLG","SMCI","SNA","SNPS","SO",
+"SPG","SPGI","SPLK","SRE","STT","STX","STZ","SWK","SWKS","SYK","SYY","T","TAP","TDY","TEL","TER","TFC","TFX",
+"TGT","TJX","TMO","TMUS","TPR","TRMB","TROW","TRV","TSCO","TSLA","TSN","TT","TTWO","TXN","TXT","UAL","UDR",
+"UHS","ULTA","UNH","UNP","UPS","URI","USB","V","VLO","VMC","VNO","VRSK","VRSN","VRTX","VTR","VTRS","VZ",
+"WAB","WAT","WBA","WDC","WEC","WELL","WFC","WHR","WM","WMB","WMT","WRB","WRK","WST","WY","WYNN","XEL","XOM",
+"XRAY","XYL","YUM","ZBH","ZBRA","ZION","ZTS"
+    ]
+    return sorted(list(set(universe)))
 
-    # NASDAQ 100 — maintained by Alex K (always live)
-    nas100 = pd.read_csv(
-        "https://raw.githubusercontent.com/Exesse/stock-index/main/nasdaq100.csv"
-    )["Symbol"].tolist()
 
-    # Russell 1000 — stable maintained dataset
-    r1000 = pd.read_csv(
-        "https://raw.githubusercontent.com/Exesse/stock-index/main/russell1000.csv"
-    )["Symbol"].tolist()
-
-    # combine + clean
-    universe = list({
-        t.strip().upper()
-        for t in (sp500 + nas100 + r1000)
-        if isinstance(t, str) and t.strip().isalpha()
-    })
-
-    return sorted(universe)
 
 
 tickers = load_index_tickers()
