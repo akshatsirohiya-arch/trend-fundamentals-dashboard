@@ -135,9 +135,9 @@ def fetch_prices_for_tickers(tickers, start_date=START_DATE, end_date=None, batc
 # Main compute function
 # -----------------------
 @st.cache_data(ttl=CACHE_TTL_SECONDS)
-def compute_universe(tickers, fmp_key):
+def compute_universe(tickers, fmp_key, batch_size):
     # 1) prices
-    prices = fetch_prices_for_tickers(tickers)
+    prices = fetch_prices_for_tickers(tickers, batch_size=batch_size)
 
     # 2) compute HH/HL/trend per row
     df = prices.copy()
@@ -312,10 +312,11 @@ elif universe_size.startswith("Custom"):
     n = st.sidebar.number_input("N tickers", min_value=200, max_value=len(tickers), value=2500, step=100)
     tickers = tickers[:n]
 
+# Batch size selection (no global modification needed)
 batch_size_ui = st.sidebar.slider("Batch size (yfinance)", 50, 400, BATCH_SIZE, step=50)
-# re-run compute with new batch size if changed
-global BATCH_SIZE
-BATCH_SIZE = batch_size_ui
+
+# Pass this batch size to compute_universe() directly (instead of global update)
+
 
 if st.sidebar.button("Force refresh caches"):
     st.cache_data.clear()
@@ -323,7 +324,8 @@ if st.sidebar.button("Force refresh caches"):
 
 # compute
 with st.spinner("Computing signals and merging fundamentals (this may take a few minutes first time)..."):
-    strict_df, snapshot_all = compute_universe(tickers, FMP_KEY)
+    strict_df, snapshot_all = compute_universe(tickers, FMP_KEY, batch_size_ui)
+
 
 st.success(f"{len(strict_df)} tickers passed strict fundamentals filter")
 
