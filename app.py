@@ -239,9 +239,8 @@ def compute_all(tickers, batch_size):
 
     # Strict filter
     strict = snapshot.copy()
-strict['FundamentalsPassedCount'] = strict[['RevenueGrowth','ProfitGrowth','CashflowGrowth']].sum(axis=1)
-strict = strict[strict['FundamentalsPassedCount'] >= 2].copy()
-
+    strict['FundamentalsPassedCount'] = strict[['RevenueGrowth','ProfitGrowth','CashflowGrowth']].sum(axis=1)
+    strict = strict[strict['FundamentalsPassedCount'] >= 2].copy()
 
     # Final Score
     if strict["Slope"].notna().any():
@@ -251,11 +250,15 @@ strict = strict[strict['FundamentalsPassedCount'] >= 2].copy()
         strict["SlopeNorm"] = np.nan
 
     strict["SlopeAnnualizedReturn"] = (strict["Slope"] / strict["Close"]) * 252 * 100
-    strict["FinalScore"] = 0.6*strict["SlopeNorm"].fillna(0) + 0.4*strict["FinancialScore"].fillna(0)
+    strict["FinalScore"] = (
+        0.6 * strict["SlopeNorm"].fillna(0) +
+        0.4 * strict["FinancialScore"].fillna(0)
+    )
 
     strict = strict.sort_values("FinalScore", ascending=False).reset_index(drop=True)
 
     return strict, snapshot
+
 
 
 # -----------------------
