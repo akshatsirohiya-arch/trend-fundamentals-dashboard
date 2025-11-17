@@ -238,11 +238,10 @@ def compute_all(tickers, batch_size):
     ].mean(axis=1)
 
     # Strict filter
-    strict = snapshot[
-        (snapshot["RevenueGrowth"]==1) &
-        (snapshot["ProfitGrowth"]==1) &
-        (snapshot["CashflowGrowth"]==1)
-    ].copy()
+    strict = snapshot.copy()
+strict['FundamentalsPassedCount'] = strict[['RevenueGrowth','ProfitGrowth','CashflowGrowth']].sum(axis=1)
+strict = strict[strict['FundamentalsPassedCount'] >= 2].copy()
+
 
     # Final Score
     if strict["Slope"].notna().any():
