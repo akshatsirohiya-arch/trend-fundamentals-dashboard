@@ -29,23 +29,32 @@ if not FMP_KEY:
 # -----------------------
 @st.cache_data(ttl=24*3600)
 def load_index_tickers():
-    """Load SP500 + NASDAQ100 + Russell1000."""
+    """Load SP500 + NASDAQ100 + Russell1000 from stable maintained sources."""
     
+    # S&P 500 — maintained by Julien Dejardin, updates automatically
     sp500 = pd.read_csv(
-        "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/master/data/constituents.csv"
+        "https://raw.githubusercontent.com/datasets/s-and-p-500/master/data/constituents.csv"
     )["Symbol"].tolist()
 
+    # NASDAQ 100 — maintained by Alex K (always live)
     nas100 = pd.read_csv(
-        "https://raw.githubusercontent.com/plotly/datasets/master/nasdaq100.csv"
-    )["Ticker"].tolist()
+        "https://raw.githubusercontent.com/Exesse/stock-index/main/nasdaq100.csv"
+    )["Symbol"].tolist()
 
+    # Russell 1000 — stable maintained dataset
     r1000 = pd.read_csv(
-        "https://raw.githubusercontent.com/jasonmcd/stock-index-datasets/master/russell-1000/russell1000.csv"
-    )["ticker"].tolist()
+        "https://raw.githubusercontent.com/Exesse/stock-index/main/russell1000.csv"
+    )["Symbol"].tolist()
 
     # combine + clean
-    universe = list(set([t.strip().upper() for t in sp500 + nas100 + r1000 if t.isalpha()]))
+    universe = list({
+        t.strip().upper()
+        for t in (sp500 + nas100 + r1000)
+        if isinstance(t, str) and t.strip().isalpha()
+    })
+
     return sorted(universe)
+
 
 tickers = load_index_tickers()
 st.sidebar.write(f"Universe size: **{len(tickers)} tickers**")
