@@ -27,10 +27,8 @@ HTTP_HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
-# FMP Batch Market Cap endpoint (official)
-FMP_BATCH_MCAP_URL = (
-    "https://financialmodelingprep.com/stable/market-capitalization-batch"
-)
+# FMP Batch Market Cap endpoint
+FMP_BATCH_MCAP_URL = "https://financialmodelingprep.com/stable/market-capitalization-batch"
 
 
 # ----------------------------------
@@ -46,7 +44,6 @@ def get_fmp_api_key():
 
     # Try Streamlit secrets (if defined)
     try:
-        # st.secrets behaves like a mapping but doesn't have .get()
         if "FMP_API_KEY" in st.secrets:
             key = st.secrets["FMP_API_KEY"]
     except Exception:
@@ -112,7 +109,7 @@ def load_us_symbol_universe():
     df_nq = df_nq[
         (df_nq["Test Issue"] == "N") & (df_nq["ETF"] == "N")
     ].copy()
-    df_nq["Ticker"] = df_nq["Symbol"].str.strip()
+    df_nq["Ticker"] = df_nq["Symbol"].astype(str).str.strip()
     df_nq["SecurityName"] = df_nq["Security Name"].astype(str)
 
     # ---- Other-listed (NYSE, etc.) ----
@@ -125,7 +122,7 @@ def load_us_symbol_universe():
     df_ol = df_ol[
         (df_ol["Test Issue"] == "N") & (df_ol["ETF"] == "N")
     ].copy()
-    df_ol["Ticker"] = df_ol["ACT Symbol"].str.strip()
+    df_ol["Ticker"] = df_ol["ACT Symbol"].astype(str).str.strip()
     df_ol["SecurityName"] = df_ol["Security Name"].astype(str)
 
     base = pd.concat(
@@ -136,6 +133,10 @@ def load_us_symbol_universe():
         ignore_index=True,
     )
 
+    # Drop null / empty tickers & dedupe
+    base = base[base["Ticker"].notna()].copy()
+    base["Ticker"] = base["Ticker"].astype(str).str.strip()
+    base = base[base["Ticker"] != ""]
     base = base.drop_duplicates(subset=["Ticker"]).reset_index(drop=True)
 
     # Strict keyword filter (you said you're okay keeping this strict)
@@ -180,6 +181,12 @@ def build_us_universe(min_mcap_usd=1_500_000_000):
     """
     api_key = get_fmp_api_key()
     base = load_us_symbol_universe()
+
+    # Make sure tickers are clean strings, non-null
+    base = base[base["Ticker"].notna()].copy()
+    base["Ticker"] = base["Ticker"].astype(str).str.strip()
+    base = base[base["Ticker"] != ""]
+
     tickers = base["Ticker"].tolist()
 
     total_symbols = len(tickers)
@@ -192,7 +199,12 @@ def build_us_universe(min_mcap_usd=1_500_000_000):
     chunk_size = 150
 
     for i in range(0, len(tickers), chunk_size):
-        chunk = tickers[i : i + chunk_size]
+        raw_chunk = tickers[i : i + chunk_size]
+        # Ensure each is a clean string and drop empties
+        chunk = [str(tk).strip() for tk in raw_chunk if pd.notna(tk) and str(tk).strip() != ""]
+        if not chunk:
+            continue
+
         symbols_str = ",".join(chunk)
 
         params = {
@@ -221,7 +233,7 @@ def build_us_universe(min_mcap_usd=1_500_000_000):
                 sym = item.get("symbol")
                 mcap = item.get("marketCap")
                 if sym is not None:
-                    mcap_map[sym.upper()] = mcap
+                    mcap_map[str(sym).upper()] = mcap
 
         for tk in chunk:
             mc = mcap_map.get(tk.upper(), None)
@@ -291,7 +303,8 @@ def process_batch(tickers):
 
     # Normalize slope
     if df["Slope"].notna().any():
-        mn, mx = df["Slope"].min(), df["Slope"].max()
+        mn = df["Slope"].min()
+        mx = df["Slope"].max()
         df["SlopeNorm"] = (df["Slope"] - mn) / (mx - mn + 1e-9)
     else:
         df["SlopeNorm"] = 0
