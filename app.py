@@ -2,7 +2,7 @@
 # CLEAN VERSION — AUTOMATED UNIVERSE (CLOUD SAFE)
 # Momentum-only scanner (Slope + Returns)
 
-raise RuntimeError("THIS IS THE FILE BEING EXECUTED")
+raise RuntimeError("THIS IS THE FILE BEING EXECUT ED")
 
 import streamlit as st
 import pandas as pd
