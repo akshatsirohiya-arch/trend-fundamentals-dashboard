@@ -1,7 +1,6 @@
 # trend-fundamentals-dashboard/app.py
-# CLEAN VERSION — AUTOMATED UNIVERSE
+# CLEAN VERSION — AUTOMATED UNIVERSE (CLOUD SAFE)
 # Momentum-only scanner (Slope + Returns)
-# Universe: US equities with Market Cap > $1.5B
 
 import streamlit as st
 import pandas as pd
@@ -11,41 +10,35 @@ import yfinance as yf
 st.set_page_config(layout="wide", page_title="Momentum Scanner (Auto Universe)")
 
 # ----------------------------------
-# UNIVERSE BUILDING (CLOUD SAFE)
+# UNIVERSE BUILDING (NO FTP, NO NASDAQTRADER)
 # ----------------------------------
 
 @st.cache_data(show_spinner=False)
 def load_us_equity_master():
     """
     Cloud-safe US equity universe.
-    Source: GitHub mirror of NASDAQ + NYSE symbols.
+    Source: GitHub-hosted symbol master (HTTPS only)
     """
-    try:
-        url = (
-            "https://raw.githubusercontent.com/"
-            "rreichel3/US-Stock-Symbols/main/all/all_tickers.csv"
-        )
-        df = pd.read_csv(url)
+    url = (
+        "https://raw.githubusercontent.com/"
+        "rreichel3/US-Stock-Symbols/main/all/all_tickers.csv"
+    )
 
-        # Keep only common stocks
-        df = df[
-            (df["exchange"].isin(["NYSE", "NASDAQ"])) &
-            (df["type"] == "Stock")
-        ]
+    df = pd.read_csv(url)
 
-        # Remove prefs / warrants / weird tickers
-        df = df[~df["symbol"].str.contains(r"\.|/|-", regex=True)]
+    df = df[
+        (df["exchange"].isin(["NYSE", "NASDAQ"])) &
+        (df["type"] == "Stock")
+    ]
 
-        return sorted(df["symbol"].unique())
+    # Remove prefs / units / weird tickers
+    df = df[~df["symbol"].str.contains(r"\.|/|-", regex=True)]
 
-    except Exception as e:
-        st.error("❌ Failed to load US ticker universe")
-        st.stop()
+    return sorted(df["symbol"].unique())
 
 
 @st.cache_data(show_spinner=True)
 def filter_by_market_cap(tickers, min_mcap):
-    """Filter tickers by market cap using yfinance"""
     valid = []
 
     for tk in tickers:
@@ -65,6 +58,7 @@ def build_universe(min_mcap):
     master = load_us_equity_master()
     universe = filter_by_market_cap(master, min_mcap)
     return universe
+
 
 # ----------------------------------
 # TECHNICAL UTILITIES
@@ -129,11 +123,9 @@ def process_batch(tickers):
     if df.empty:
         return df
 
-    # Normalize slope
     mn, mx = df["Slope"].min(), df["Slope"].max()
     df["SlopeNorm"] = (df["Slope"] - mn) / (mx - mn + 1e-9)
 
-    # Final momentum score
     df["FinalScore"] = (
         0.7 * df["SlopeNorm"] +
         0.15 * df["Ret1M"] +
@@ -150,7 +142,6 @@ def process_batch(tickers):
 st.title("Momentum Scanner — Automated Universe")
 st.write("US equities | Market Cap > $1.5B | Momentum-only")
 
-# Sidebar controls
 min_mcap = st.sidebar.selectbox(
     "Minimum Market Cap",
     options=[1_000_000_000, 1_500_000_000, 2_000_000_000],
@@ -173,7 +164,7 @@ with st.spinner("Building universe..."):
 
 MAX_TICKERS = 2000
 if len(TICKERS) > MAX_TICKERS:
-    st.warning(f"Universe capped at {MAX_TICKERS} tickers for stability")
+    st.warning(f"Universe capped at {MAX_TICKERS} stocks")
     TICKERS = TICKERS[:MAX_TICKERS]
 
 st.success(f"Universe size: {len(TICKERS)} stocks")
@@ -198,11 +189,10 @@ if final_df:
         .reset_index(drop=True)
     )
 
-    # ---- YOUR FILTER ----
-    final = final[final["Ret1M"] < 30]
+    final = final[final["Ret1M"] < 20]
 
-    st.subheader("Top Momentum Picks (<30% 1M Return)")
+    st.subheader("Top Momentum Picks (<20% 1M Return)")
     st.dataframe(final.head(250), use_container_width=True)
 
 else:
-    st.error("No results. Check yfinance or reduce universe size.")
+    st.error("No results. Try reducing universe or batch size.")
