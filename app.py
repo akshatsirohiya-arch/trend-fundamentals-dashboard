@@ -11,32 +11,41 @@ import yfinance as yf
 st.set_page_config(layout="wide", page_title="Momentum Scanner (Auto Universe)")
 
 # ----------------------------------
-# UNIVERSE BUILDING
+# UNIVERSE BUILDING (CLOUD SAFE)
 # ----------------------------------
 
 @st.cache_data(show_spinner=False)
 def load_us_equity_master():
-    """Load all US-listed common stocks (NASDAQ + NYSE)"""
-    nasdaq_url = "https://ftp.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt"
-    other_url = "https://ftp.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt"
+    """
+    Cloud-safe US equity universe.
+    Source: GitHub mirror of NASDAQ + NYSE symbols.
+    """
+    try:
+        url = (
+            "https://raw.githubusercontent.com/"
+            "rreichel3/US-Stock-Symbols/main/all/all_tickers.csv"
+        )
+        df = pd.read_csv(url)
 
-    nasdaq = pd.read_csv(nasdaq_url, sep="|")
-    other = pd.read_csv(other_url, sep="|")
+        # Keep only common stocks
+        df = df[
+            (df["exchange"].isin(["NYSE", "NASDAQ"])) &
+            (df["type"] == "Stock")
+        ]
 
-    df = pd.concat([nasdaq, other], ignore_index=True)
+        # Remove prefs / warrants / weird tickers
+        df = df[~df["symbol"].str.contains(r"\.|/|-", regex=True)]
 
-    # Common stocks only
-    df = df[
-        (df["Test Issue"] == "N") &
-        (~df["Symbol"].str.contains(r"\$|\.|/"))  # remove prefs, warrants, odd tickers
-    ]
+        return sorted(df["symbol"].unique())
 
-    return sorted(df["Symbol"].unique())
+    except Exception as e:
+        st.error("❌ Failed to load US ticker universe")
+        st.stop()
 
 
 @st.cache_data(show_spinner=True)
 def filter_by_market_cap(tickers, min_mcap):
-    """Filter tickers by market cap"""
+    """Filter tickers by market cap using yfinance"""
     valid = []
 
     for tk in tickers:
@@ -56,7 +65,6 @@ def build_universe(min_mcap):
     master = load_us_equity_master()
     universe = filter_by_market_cap(master, min_mcap)
     return universe
-
 
 # ----------------------------------
 # TECHNICAL UTILITIES
